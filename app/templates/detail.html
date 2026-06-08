@@ -1,0 +1,40 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle - ISSEMYM OCR App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Detalle del registro</h1>
+        <div>
+            <a href="/search" class="btn btn-outline-secondary">Regresar</a>
+            <a href="/pdf/{{ record.id }}" target="_blank" class="btn btn-primary">Abrir PDF</a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <div class="row g-3">
+                <div class="col-md-4"><label class="form-label">Tipo de movimiento</label><input class="form-control" value="{{ record.tipo_movimiento or '' }}" readonly></div>
+                <div class="col-md-4"><label class="form-label">A partir de</label><input class="form-control" value="{{ record.a_partir_de or '' }}" readonly></div>
+                <div class="col-md-4"><label class="form-label">Clave afiliacion ISSEMYM</label><input class="form-control" value="{{ record.clave_afiliacion_issemym or '' }}" readonly></div>
+                <div class="col-md-4"><label class="form-label">RFC</label><input class="form-control" value="{{ record.rfc or '' }}" readonly></div>
+                <div class="col-md-8"><label class="form-label">Nombre completo</label><input class="form-control" value="{{ record.nombre_completo or '' }}" readonly></div>
+                <div class="col-md-8"><label class="form-label">Institucion publica</label><input class="form-control" value="{{ record.institucion_publica or '' }}" readonly></div>
+                <div class="col-md-4"><label class="form-label">Clave institucion publica</label><input class="form-control" value="{{ record.clave_institucion_publica or '' }}" readonly></div>
+                <div class="col-md-6"><label class="form-label">Nombramiento o categoria</label><input class="form-control" value="{{ record.nombramiento_categoria or '' }}" readonly></div>
+                <div class="col-md-6"><label class="form-label">Fecha de emision</label><input class="form-control" value="{{ record.fecha_emision or '' }}" readonly></div>
+                <div class="col-12"><label class="form-label">Firma y cadena digital</label><textarea class="form-control" rows="4" readonly>{{ record.firma_cadena_digital or '' }}</textarea></div>
+                <div class="col-md-6"><label class="form-label">Nombre del archivo</label><input class="form-control" value="{{ record.nombre_archivo_pdf or '' }}" readonly></div>
+                <div class="col-md-6"><label class="form-label">Pagina origen</label><input class="form-control" value="{{ record.pagina_origen or '' }}" readonly></div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

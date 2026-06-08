@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+venv/
+.env
+
+# Data y archivos grandes
+data/
+*.rar
+*.mp4
+*.zip
+
+# Base de datos local
+*.db
+*.sqlite

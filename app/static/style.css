@@ -1,0 +1,10 @@
+﻿body {
+    background: #f4f6f9;
+}
+.card {
+    border: 0;
+    border-radius: 14px;
+}
+.form-control[readonly], textarea[readonly] {
+    background: #fff;
+}
