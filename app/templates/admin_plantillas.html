@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Plantillas de Oficios — ISSEMYM</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="bg-light">
+{% include "_header_user.html" %}
+
+<div class="container-fluid px-4 py-4" style="max-width:1000px;">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="mb-0" style="color:var(--gem-dark)">⚙️ Plantillas de Oficios</h4>
+            <small class="text-muted">Administra las plantillas disponibles para generar oficios</small>
+        </div>
+        <a href="/admin/plantillas/nueva" class="btn btn-sm" style="background:var(--gem-burgundy);color:#fff;">
+            + Nueva Plantilla
+        </a>
+    </div>
+
+    {% if not plantillas %}
+    <div class="card border-0 shadow-sm text-center py-5">
+        <div class="card-body text-muted">No hay plantillas creadas todavía.</div>
+    </div>
+    {% else %}
+    <div class="row g-3">
+        {% for p in plantillas %}
+        <div class="col-12">
+            <div class="card border-0 shadow-sm {% if not p.activa %}opacity-50{% endif %}">
+                <div class="card-body py-3 px-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span class="fw-semibold" style="color:var(--gem-dark);">{{ p.nombre }}</span>
+                                {% if p.activa %}
+                                    <span class="badge" style="background:#198754;font-size:.7rem;">Activa</span>
+                                {% else %}
+                                    <span class="badge bg-secondary" style="font-size:.7rem;">Inactiva</span>
+                                {% endif %}
+                                <span class="badge bg-light text-muted border" style="font-size:.7rem;">Orden {{ p.orden }}</span>
+                            </div>
+                            {% if p.descripcion %}
+                            <p class="text-muted small mb-0">{{ p.descripcion }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="d-flex gap-2 flex-shrink-0 ms-3">
+                            <a href="/admin/plantillas/{{ p.id }}/editar"
+                               class="btn btn-sm btn-outline-secondary py-0 px-2">Editar</a>
+                            <form method="POST" action="/admin/plantillas/{{ p.id }}/toggle" class="d-inline">
+                                <button type="submit"
+                                        class="btn btn-sm py-0 px-2 {% if p.activa %}btn-outline-warning{% else %}btn-outline-success{% endif %}">
+                                    {% if p.activa %}Desactivar{% else %}Activar{% endif %}
+                                </button>
+                            </form>
+                            <a href="/oficios/nuevo?plantilla_id={{ p.id }}"
+                               class="btn btn-sm py-0 px-2" style="background:var(--gem-gold);color:#2C2C2C;">
+                                Usar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="mt-4 text-muted small">
+        <strong>Variables disponibles en las plantillas:</strong><br>
+        <code>{{fecha_actual}}</code> <code>{{numero_oficio}}</code>
+        <code>{{nombre_completo}}</code> <code>{{clave_issemym}}</code>
+        <code>{{rfc}}</code> <code>{{tipo_movimiento}}</code>
+        <code>{{a_partir_de}}</code> <code>{{institucion_publica}}</code>
+        <code>{{clave_institucion}}</code> <code>{{nombramiento}}</code>
+        <code>{{fecha_emision}}</code> <code>{{archivo_pdf}}</code>
+    </div>
+
+</div>
+
+{% include "_footer.html" %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

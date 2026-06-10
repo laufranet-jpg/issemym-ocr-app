@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ 'Editar' if edit_user else 'Nuevo' }} usuario – ISSEMYM</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="app-header">
+    <div class="header-inner container-fluid">
+        <div class="header-titles">
+            <div class="header-sup">Gobierno del Estado de México · Secretaría de Educación</div>
+            <div class="header-main">AVISO DE MOVIMIENTO PARA LA AFILIACION Y VIGENCIA DE DERECHOS</div>
+            <div class="header-sub">ISSEMYM – Trámites Externos</div>
+        </div>
+        <nav class="header-nav d-flex gap-1">
+            <a href="/">Inicio</a>
+            <a href="/search">Buscar</a>
+            <a href="/dashboard">Dashboard</a>
+        </nav>
+        {% include "_header_user.html" %}
+    </div>
+</header>
+
+<div class="page-content container py-4" style="max-width:680px;">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="/admin/usuarios" class="btn btn-outline-secondary btn-sm">← Regresar</a>
+        <h5 class="mb-0" style="color:var(--gem-dark)">
+            {{ '✏️ Editar usuario: ' + edit_user.username if edit_user else '➕ Nuevo usuario' }}
+        </h5>
+    </div>
+
+    {% if errors %}
+    <div class="alert alert-danger py-2 small mb-3">
+        <strong>Corrige los siguientes errores:</strong>
+        <ul class="mb-0 mt-1 ps-3">
+            {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-header">{{ 'Datos del usuario' }}</div>
+        <div class="card-body p-4">
+            <form method="post">
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label class="form-label">Nombre de usuario *</label>
+                        <input type="text" name="username" class="form-control"
+                            value="{{ form.username or (edit_user.username if edit_user else '') }}"
+                            required {{ 'readonly' if edit_user else '' }}
+                            placeholder="ej. jgarcia">
+                        {% if edit_user %}
+                        <div class="form-text">El nombre de usuario no se puede cambiar.</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Nombre completo *</label>
+                        <input type="text" name="full_name" class="form-control"
+                            value="{{ form.full_name or (edit_user.full_name if edit_user else '') }}"
+                            required placeholder="ej. Juan García López">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Correo electrónico</label>
+                        <input type="email" name="email" class="form-control"
+                            value="{{ form.email or (edit_user.email if edit_user else '') }}"
+                            placeholder="ej. jgarcia@edomex.gob.mx">
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Perfiles / Roles * <span class="text-muted fw-normal small">(selecciona uno o más)</span></label>
+                        {% set selected_roles = form.get('roles') if form.get('roles') else (edit_user.roles if edit_user else []) %}
+                        <div class="d-flex flex-wrap gap-3 mt-1">
+                            {% for key, label, color in [
+                                ("busqueda",   "Búsqueda",       "#0d6efd"),
+                                ("adjuntar",   "Adjuntar datos", "#198754"),
+                                ("dashboards", "Dashboards",     "#A078D0"),
+                                ("admin",      "Administrador",  "#8B6CC8")
+                            ] %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox"
+                                    name="roles" value="{{ key }}" id="role_{{ key }}"
+                                    {{ 'checked' if key in selected_roles else '' }}>
+                                <label class="form-check-label d-flex align-items-center gap-1" for="role_{{ key }}">
+                                    <span class="role-badge-table" style="background:{{ color }}">{{ label }}</span>
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="form-text">Al menos un rol es requerido.</div>
+                    </div>
+
+                    <div class="col-12"><hr class="my-1"></div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            {{ 'Nueva contraseña' if edit_user else 'Contraseña *' }}
+                        </label>
+                        <div class="input-group">
+                            <input type="password" name="password" id="pass1" class="form-control"
+                                {{ '' if edit_user else 'required' }}
+                                placeholder="{{ 'Dejar en blanco para no cambiar' if edit_user else '••••••••' }}"
+                                oninput="checkStrength(this.value)">
+                            <button type="button" class="btn btn-outline-secondary" onclick="toggleVis('pass1')">👁</button>
+                        </div>
+                        <div id="strengthBar" class="mt-1" style="height:4px;border-radius:2px;background:#eee;display:none;">
+                            <div id="strengthFill" style="height:100%;border-radius:2px;transition:width .3s;"></div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            {{ 'Confirmar nueva contraseña' if edit_user else 'Confirmar contraseña *' }}
+                        </label>
+                        <div class="input-group">
+                            <input type="password" name="password_confirm" id="pass2" class="form-control"
+                                {{ '' if edit_user else 'required' }}
+                                placeholder="Repite la contraseña">
+                            <button type="button" class="btn btn-outline-secondary" onclick="toggleVis('pass2')">👁</button>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="password-rules">
+                            <strong>Reglas de contraseña:</strong>
+                            <ul class="mb-0 mt-1 ps-3" id="rulesList">
+                                <li id="r-len">Mínimo 8 caracteres</li>
+                                <li id="r-upper">Al menos una mayúscula (A-Z)</li>
+                                <li id="r-lower">Al menos una minúscula (a-z)</li>
+                                <li id="r-num">Al menos un número (0-9)</li>
+                                <li id="r-special">Al menos un carácter especial (!@#$%...)</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-4">
+                        {{ 'Guardar cambios' if edit_user else 'Crear usuario' }}
+                    </button>
+                    <a href="/admin/usuarios" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% include "_footer.html" %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function toggleVis(id) {
+    const el = document.getElementById(id);
+    el.type = el.type === 'password' ? 'text' : 'password';
+}
+
+function checkStrength(val) {
+    const bar = document.getElementById('strengthBar');
+    const fill = document.getElementById('strengthFill');
+    bar.style.display = val.length ? 'block' : 'none';
+
+    const checks = [
+        [/[A-Z]/, 'r-upper'],
+        [/[a-z]/, 'r-lower'],
+        [/\d/, 'r-num'],
+        [/[!@#$%^&*()\-_=+\[\]{};:'",.<>?\/\\|`~]/, 'r-special'],
+    ];
+    let score = val.length >= 8 ? 1 : 0;
+    checks.forEach(([rx, id]) => {
+        const ok = rx.test(val);
+        if (ok) score++;
+        const li = document.getElementById(id);
+        if (li) li.style.color = ok ? '#198754' : '';
+    });
+    document.getElementById('r-len').style.color = val.length >= 8 ? '#198754' : '';
+
+    const pct = Math.min(100, score * 20) + '%';
+    const color = score <= 2 ? '#dc3545' : score <= 3 ? '#ffc107' : score <= 4 ? '#0d6efd' : '#198754';
+    fill.style.width = pct;
+    fill.style.background = color;
+}
+</script>
+</body>
+</html>

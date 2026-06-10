@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi perfil – ISSEMYM</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+{% set role_names = {"busqueda":"Búsqueda","adjuntar":"Adjuntar datos","dashboards":"Dashboards","admin":"Administrador"} %}
+
+<header class="app-header">
+    <div class="header-inner container-fluid">
+        <div class="header-titles">
+            <div class="header-sup">Gobierno del Estado de México · Secretaría de Educación</div>
+            <div class="header-main">AVISO DE MOVIMIENTO PARA LA AFILIACION Y VIGENCIA DE DERECHOS</div>
+            <div class="header-sub">ISSEMYM – Trámites Externos</div>
+        </div>
+        <nav class="header-nav d-flex gap-1">
+            <a href="/">Inicio</a>
+            <a href="/search">Buscar</a>
+            {% if has_role(current_user, "dashboards", "admin") %}<a href="/dashboard">Dashboard</a>{% endif %}
+        </nav>
+        {% include "_header_user.html" %}
+    </div>
+</header>
+
+<div class="page-content container py-4" style="max-width:600px;">
+
+    <h5 class="mb-4" style="color:var(--gem-dark)">👤 Mi perfil</h5>
+
+    {% if message %}
+    <div class="alert alert-success alert-dismissible fade show py-2 small mb-3">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
+    <!-- Info de cuenta -->
+    <div class="card mb-4">
+        <div class="card-header">Información de la cuenta</div>
+        <div class="card-body p-3">
+            <div class="row g-2">
+                <div class="col-sm-4"><span class="form-label">Usuario</span></div>
+                <div class="col-sm-8"><strong>{{ current_user.username }}</strong></div>
+                <div class="col-sm-4"><span class="form-label">Nombre</span></div>
+                <div class="col-sm-8">{{ current_user.full_name }}</div>
+                <div class="col-sm-4"><span class="form-label">Correo</span></div>
+                <div class="col-sm-8">{{ current_user.email or '—' }}</div>
+                <div class="col-sm-4"><span class="form-label">Perfil</span></div>
+                <div class="col-sm-8 d-flex flex-wrap gap-1">
+                    {% for r in current_user.roles | sort %}
+                    <span class="role-chip {{ r }}">{{ role_names.get(r, r) }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cambiar contraseña -->
+    <div class="card">
+        <div class="card-header">🔒 Cambiar contraseña</div>
+        <div class="card-body p-4">
+
+            {% if errors %}
+            <div class="alert alert-danger py-2 small mb-3">
+                <ul class="mb-0 ps-3">
+                    {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <form method="post" action="/perfil">
+                <div class="mb-3">
+                    <label class="form-label">Contraseña actual</label>
+                    <div class="input-group">
+                        <input type="password" name="current_password" id="cp" class="form-control" required>
+                        <button type="button" class="btn btn-outline-secondary" onclick="tv('cp')">👁</button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Nueva contraseña</label>
+                    <div class="input-group">
+                        <input type="password" name="new_password" id="np" class="form-control"
+                            required oninput="checkStrength(this.value)">
+                        <button type="button" class="btn btn-outline-secondary" onclick="tv('np')">👁</button>
+                    </div>
+                    <div id="strengthBar" style="height:4px;border-radius:2px;background:#eee;margin-top:4px;display:none;">
+                        <div id="strengthFill" style="height:100%;border-radius:2px;transition:width .3s;"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Confirmar nueva contraseña</label>
+                    <div class="input-group">
+                        <input type="password" name="confirm_password" id="cp2" class="form-control" required>
+                        <button type="button" class="btn btn-outline-secondary" onclick="tv('cp2')">👁</button>
+                    </div>
+                </div>
+
+                <div class="password-rules mb-3">
+                    <strong>Reglas:</strong>
+                    <ul class="mb-0 mt-1 ps-3">
+                        <li id="r-len">Mínimo 8 caracteres</li>
+                        <li id="r-upper">Al menos una mayúscula (A-Z)</li>
+                        <li id="r-lower">Al menos una minúscula (a-z)</li>
+                        <li id="r-num">Al menos un número (0-9)</li>
+                        <li id="r-special">Al menos un carácter especial (!@#$%...)</li>
+                    </ul>
+                </div>
+
+                <button type="submit" class="btn btn-primary px-4">Actualizar contraseña</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% include "_footer.html" %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function tv(id) { const e=document.getElementById(id); e.type=e.type==='password'?'text':'password'; }
+function checkStrength(val) {
+    const bar=document.getElementById('strengthBar'), fill=document.getElementById('strengthFill');
+    bar.style.display=val.length?'block':'none';
+    const checks=[[/[A-Z]/,'r-upper'],[/[a-z]/,'r-lower'],[/\d/,'r-num'],[/[!@#$%^&*()\-_=+\[\]{};:'",.<>?\/\\|`~]/,'r-special']];
+    let score=val.length>=8?1:0;
+    checks.forEach(([rx,id])=>{ const ok=rx.test(val); if(ok)score++; const li=document.getElementById(id); if(li)li.style.color=ok?'#198754':''; });
+    document.getElementById('r-len').style.color=val.length>=8?'#198754':'';
+    fill.style.width=Math.min(100,score*20)+'%';
+    fill.style.background=score<=2?'#dc3545':score<=3?'#ffc107':score<=4?'#0d6efd':'#198754';
+}
+</script>
+</body>
+</html>

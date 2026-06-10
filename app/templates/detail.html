@@ -1,40 +1,238 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalle - ISSEMYM OCR App</title>
+    <title>ISSEMYM – Trámites Externos</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-<div class="container py-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0">Detalle del registro</h1>
-        <div>
-            <a href="/search" class="btn btn-outline-secondary">Regresar</a>
-            <a href="/pdf/{{ record.id }}" target="_blank" class="btn btn-primary">Abrir PDF</a>
+<header class="app-header">
+    <div class="header-inner container-fluid">
+        <div class="header-titles">
+            <div class="header-sup">Gobierno del Estado de México · Secretaría de Educación</div>
+            <div class="header-main">AVISO DE MOVIMIENTO PARA LA AFILIACION Y VIGENCIA DE DERECHOS</div>
+            <div class="header-sub">ISSEMYM – Trámites Externos</div>
+        </div>
+        <nav class="header-nav d-flex gap-1">
+            <a href="/">Inicio</a>
+            <a href="/search">Buscar</a>
+            {% if has_role(current_user, "dashboards", "admin") %}<a href="/dashboard">Dashboard</a>{% endif %}
+        </nav>
+        {% include "_header_user.html" %}
+    </div>
+</header>
+
+<div class="page-content container py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0" style="color:var(--gem-dark)">Registro #{{ record.id }}</h5>
+        <div class="d-flex gap-2">
+            <a href="/search" class="btn btn-outline-secondary btn-sm">← Regresar</a>
+            <button id="btnEmail" class="btn btn-gold btn-sm">✉️ Enviar por Gmail</button>
+<a href="/pdf/{{ record.id }}" target="_blank" class="btn btn-sm btn-outline-primary">Abrir PDF ↗</a>
         </div>
     </div>
 
-    <div class="card shadow-sm">
-        <div class="card-body p-4">
-            <div class="row g-3">
-                <div class="col-md-4"><label class="form-label">Tipo de movimiento</label><input class="form-control" value="{{ record.tipo_movimiento or '' }}" readonly></div>
-                <div class="col-md-4"><label class="form-label">A partir de</label><input class="form-control" value="{{ record.a_partir_de or '' }}" readonly></div>
-                <div class="col-md-4"><label class="form-label">Clave afiliacion ISSEMYM</label><input class="form-control" value="{{ record.clave_afiliacion_issemym or '' }}" readonly></div>
-                <div class="col-md-4"><label class="form-label">RFC</label><input class="form-control" value="{{ record.rfc or '' }}" readonly></div>
-                <div class="col-md-8"><label class="form-label">Nombre completo</label><input class="form-control" value="{{ record.nombre_completo or '' }}" readonly></div>
-                <div class="col-md-8"><label class="form-label">Institucion publica</label><input class="form-control" value="{{ record.institucion_publica or '' }}" readonly></div>
-                <div class="col-md-4"><label class="form-label">Clave institucion publica</label><input class="form-control" value="{{ record.clave_institucion_publica or '' }}" readonly></div>
-                <div class="col-md-6"><label class="form-label">Nombramiento o categoria</label><input class="form-control" value="{{ record.nombramiento_categoria or '' }}" readonly></div>
-                <div class="col-md-6"><label class="form-label">Fecha de emision</label><input class="form-control" value="{{ record.fecha_emision or '' }}" readonly></div>
-                <div class="col-12"><label class="form-label">Firma y cadena digital</label><textarea class="form-control" rows="4" readonly>{{ record.firma_cadena_digital or '' }}</textarea></div>
-                <div class="col-md-6"><label class="form-label">Nombre del archivo</label><input class="form-control" value="{{ record.nombre_archivo_pdf or '' }}" readonly></div>
-                <div class="col-md-6"><label class="form-label">Pagina origen</label><input class="form-control" value="{{ record.pagina_origen or '' }}" readonly></div>
+    {% if message %}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
+    <div class="row g-4">
+        <!-- Columna izquierda -->
+        <div class="col-lg-5">
+
+            <div class="card mb-3">
+                <div class="card-header">✏️ Datos extraídos</div>
+                <div class="card-body p-3">
+                    <form action="/update/{{ record.id }}" method="post">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label">Tipo de movimiento</label>
+                                <select class="form-select form-select-sm" name="tipo_movimiento"
+                                    {{ 'disabled' if not has_role(current_user, 'adjuntar', 'admin') else '' }}>
+                                    <option value="">— Sin dato —</option>
+                                    {% for op in ['ALTA', 'BAJA', 'CAMBIO'] %}
+                                    <option value="{{ op }}" {% if record.tipo_movimiento == op %}selected{% endif %}>{{ op }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">A partir de</label>
+                                <input class="form-control form-control-sm" name="a_partir_de"
+                                    value="{{ record.a_partir_de or '' }}"
+                                    {{ 'readonly' if not has_role(current_user, 'adjuntar', 'admin') else '' }}>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Clave ISSEMYM</label>
+                                <input class="form-control form-control-sm" name="clave_afiliacion_issemym"
+                                    value="{{ record.clave_afiliacion_issemym or '' }}"
+                                    {{ 'readonly' if not has_role(current_user, 'adjuntar', 'admin') else '' }}>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">RFC / CURP</label>
+                                <input class="form-control form-control-sm" name="rfc"
+                                    value="{{ record.rfc or '' }}"
+                                    {{ 'readonly' if not has_role(current_user, 'adjuntar', 'admin') else '' }}>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Nombre completo</label>
+                                <input class="form-control form-control-sm" name="nombre_completo"
+                                    value="{{ record.nombre_completo or '' }}"
+                                    {{ 'readonly' if not has_role(current_user, 'adjuntar', 'admin') else '' }}>
+                            </div>
+                            <div class="col-8">
+                                <label class="form-label">Institución pública</label>
+                                <input class="form-control form-control-sm" name="institucion_publica"
+                                    value="{{ record.institucion_publica or '' }}"
+                                    {{ 'readonly' if not has_role(current_user, 'adjuntar', 'admin') else '' }}>
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label">Clave institución</label>
+                                <input class="form-control form-control-sm" name="clave_institucion_publica"
+                                    value="{{ record.clave_institucion_publica or '' }}"
+                                    {{ 'readonly' if not has_role(current_user, 'adjuntar', 'admin') else '' }}>
+                            </div>
+                            <div class="col-7">
+                                <label class="form-label">Nombramiento</label>
+                                <input class="form-control form-control-sm" name="nombramiento_categoria"
+                                    value="{{ record.nombramiento_categoria or '' }}"
+                                    {{ 'readonly' if not has_role(current_user, 'adjuntar', 'admin') else '' }}>
+                            </div>
+                            <div class="col-5">
+                                <label class="form-label">Fecha emisión</label>
+                                <input class="form-control form-control-sm" name="fecha_emision"
+                                    value="{{ record.fecha_emision or '' }}"
+                                    {{ 'readonly' if not has_role(current_user, 'adjuntar', 'admin') else '' }}>
+                            </div>
+                        </div>
+                        {% if has_role(current_user, 'adjuntar', 'admin') %}
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-primary btn-sm px-4">Guardar cambios</button>
+                        </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+
+            {% if has_role(current_user, 'adjuntar', 'admin') %}
+            <div class="card mb-3">
+                <div class="card-header">🏷️ Renombrar archivo</div>
+                <div class="card-body p-3">
+                    <p class="text-muted small mb-2">Actual: <code>{{ record.nombre_archivo_pdf }}</code></p>
+                    <form action="/rename/{{ record.id }}" method="post" class="row g-2 align-items-end">
+                        <div class="col-8">
+                            <label class="form-label">Nuevo nombre</label>
+                            <input class="form-control form-control-sm" name="nuevo_nombre"
+                                placeholder="{{ record.clave_afiliacion_issemym or 'CLAVE' }}_BAJA" required>
+                        </div>
+                        <div class="col-4 d-grid">
+                            <button type="submit" class="btn btn-gold btn-sm">Renombrar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="card">
+                <div class="card-header">📁 Archivo</div>
+                <div class="card-body p-3">
+                    <div class="row g-2">
+                        <div class="col-8">
+                            <label class="form-label">Nombre</label>
+                            <input class="form-control form-control-sm" value="{{ record.nombre_archivo_pdf or '' }}" readonly>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label">Página</label>
+                            <input class="form-control form-control-sm" value="{{ record.pagina_origen or '' }}" readonly>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Ruta</label>
+                            <input class="form-control form-control-sm" value="{{ record.ruta_archivo_pdf or '' }}" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Columna derecha: visor PDF -->
+        <div class="col-lg-7">
+            <div class="card" style="height:100%;">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>📄 Visor de documento</span>
+                    <a href="/pdf/{{ record.id }}" target="_blank"
+                       class="btn btn-sm" style="color:rgba(255,255,255,0.8);border-color:rgba(255,255,255,0.35);">↗ Nueva pestaña</a>
+                </div>
+                <div class="card-body p-0" style="flex:1;">
+                    <object data="/pdf/{{ record.id }}" type="application/pdf"
+                        style="width:100%;height:760px;border:none;border-radius:0 0 10px 10px;">
+                        <p class="p-3 text-muted">
+                            Tu navegador no puede mostrar el PDF aquí.
+                            <a href="/pdf/{{ record.id }}" target="_blank">Ábrelo en una nueva pestaña.</a>
+                        </p>
+                    </object>
+                </div>
             </div>
         </div>
     </div>
+
 </div>
+
+{% include "_footer.html" %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.getElementById('btnEmail').addEventListener('click', async function() {
+    const btn = this;
+    btn.disabled = true;
+    btn.textContent = '⏳ Abriendo Gmail…';
+
+    try {
+        const resp = await fetch('/api/email_data/{{ record.id }}');
+        const data = await resp.json();
+        if (data.error) { alert('Error: ' + data.error); return; }
+
+        // 1️⃣ Descargar el PDF automáticamente para que el usuario lo adjunte en Outlook
+        const link = document.createElement('a');
+        link.href = data.pdf_url;
+        link.download = data.pdf_name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // 2️⃣ Abrir Gmail compose en nueva pestaña
+        window.open(data.gmail_url, '_blank');
+
+        // Aviso orientativo
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed bottom-0 end-0 p-3';
+        toast.style.zIndex = 9999;
+        toast.innerHTML = `
+            <div class="toast show align-items-center border-0" style="background:#8B6CC8;color:#fff;min-width:320px;" role="status">
+                <div class="d-flex">
+                    <div class="toast-body small">
+                        <strong>✉️ Gmail abierto.</strong><br>
+                        El PDF <em>${data.pdf_name}</em> se descargó en tu carpeta de descargas.
+                        Adjúntalo al correo desde ahí.
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                        onclick="this.closest('.position-fixed').remove()"></button>
+                </div>
+            </div>`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 8000);
+
+    } catch(e) {
+        alert('Error al abrir Outlook. Intenta de nuevo.');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '✉️ Enviar por Gmail';
+    }
+});
+</script>
 </body>
 </html>

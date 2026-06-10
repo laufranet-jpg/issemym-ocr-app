@@ -1,0 +1,10 @@
+{% set role_names = {"busqueda":"Búsqueda","adjuntar":"Adjuntar datos","dashboards":"Dashboards","admin":"Administrador"} %}
+<div class="header-user">
+    <span class="header-user-name">{{ current_user.full_name }}</span>
+    {% for r in current_user.roles | sort %}
+    <span class="role-chip {{ r }}">{{ role_names.get(r, r) }}</span>
+    {% endfor %}
+    {% if has_role(current_user, "admin") %}<a href="/admin/usuarios">Usuarios</a>{% endif %}
+    <a href="/perfil">Mi perfil</a>
+    <a href="/logout" class="logout-link">Salir</a>
+</div>

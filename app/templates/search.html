@@ -1,77 +1,211 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Busqueda - ISSEMYM OCR App</title>
+    <title>Buscar – ISSEMYM Trámites Externos</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .filter-card { background:#fff; border-radius:10px; box-shadow:0 2px 8px rgba(90,17,40,.07); border:1px solid rgba(90,17,40,.08); padding:1rem 1.25rem; margin-bottom:1rem; }
+        .filter-label { font-size:.75rem; font-weight:700; color:var(--gem-dark); text-transform:uppercase; letter-spacing:.05em; margin-bottom:.35rem; display:block; }
+        .badge-alta  { background:#198754; }
+        .badge-baja  { background:#dc3545; }
+        .badge-cambio{ background:var(--gem-gold); }
+        .page-btn { border:1px solid var(--gem-burgundy); color:var(--gem-burgundy); background:#fff; border-radius:6px; padding:.3rem .7rem; font-size:.82rem; cursor:pointer; }
+        .page-btn:hover, .page-btn.active { background:var(--gem-burgundy); color:#fff; }
+        .page-btn:disabled { opacity:.4; cursor:default; background:#fff; color:var(--gem-burgundy); }
+        #counter { font-size:.82rem; color:#666; }
+    </style>
 </head>
 <body>
-<div class="container py-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0">Busqueda de registros</h1>
-        <a href="/" class="btn btn-outline-secondary">Inicio</a>
+<header class="app-header">
+    <div class="header-inner container-fluid">
+        <div class="header-titles">
+            <div class="header-sup">Gobierno del Estado de México · Secretaría de Educación</div>
+            <div class="header-main">AVISO DE MOVIMIENTO PARA LA AFILIACION Y VIGENCIA DE DERECHOS</div>
+            <div class="header-sub">ISSEMYM – Trámites Externos</div>
+        </div>
+        <nav class="header-nav d-flex gap-1">
+            <a href="/">Inicio</a>
+            <a href="/search" class="active">Buscar</a>
+            {% if has_role(current_user, "dashboards", "admin") %}<a href="/dashboard">Dashboard</a>{% endif %}
+        </nav>
+        {% include "_header_user.html" %}
     </div>
+</header>
 
-    <form method="get" action="/search" class="row g-3 mb-4">
-        <div class="col-md-10">
-            <input type="text" class="form-control" name="q" placeholder="Buscar por clave, RFC, nombre, institucion, fecha, categoria, archivo..." value="{{ q }}">
-        </div>
-        <div class="col-md-2 d-grid">
-            <button type="submit" class="btn btn-primary">Buscar</button>
-        </div>
-    </form>
+<div class="page-content container py-4">
+    <div class="row g-4">
 
-    <div class="card shadow-sm">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>ID</th>
-                            <th>Clave ISSEMYM</th>
-                            <th>Nombre</th>
-                            <th>RFC</th>
-                            <th>Movimiento</th>
-                            <th>Fecha emision</th>
-                            <th>Archivo</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {% for item in results %}
-                        <tr>
-                            <td>{{ item.id }}</td>
-                            <td>{{ item.clave_afiliacion_issemym or '' }}</td>
-                            <td>{{ item.nombre_completo or '' }}</td>
-                            <td>{{ item.rfc or '' }}</td>
-                            <td>{{ item.tipo_movimiento or '' }}</td>
-                            <td>{{ item.fecha_emision or '' }}</td>
-                            <td>{{ item.nombre_archivo_pdf or '' }}</td>
-                            <td><a href="/detail/{{ item.id }}" class="btn btn-sm btn-outline-primary">Ver</a></td>
-                        </tr>
-                    {% else %}
-                        <tr>
-                            <td colspan="8" class="text-center text-muted py-4">Sin resultados</td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
+        <!-- FILTROS -->
+        <div class="col-lg-3">
+            <div class="filter-card">
+                <span class="filter-label">🔍 Búsqueda</span>
+                <input type="text" id="searchInput" class="form-control form-control-sm mb-3"
+                    placeholder="Clave, RFC, nombre..." autocomplete="off">
+
+                <span class="filter-label">Tipo de movimiento</span>
+                <div class="d-flex flex-column gap-1 mb-3">
+                    <label class="d-flex align-items-center gap-2 small"><input type="checkbox" id="f-todos" checked> Todos</label>
+                    <label class="d-flex align-items-center gap-2 small"><input type="checkbox" class="tipo-cb" value="ALTA"> <span class="badge badge-alta">ALTA</span></label>
+                    <label class="d-flex align-items-center gap-2 small"><input type="checkbox" class="tipo-cb" value="BAJA"> <span class="badge badge-baja">BAJA</span></label>
+                    <label class="d-flex align-items-center gap-2 small"><input type="checkbox" class="tipo-cb" value="CAMBIO"> <span class="badge badge-cambio">CAMBIO</span></label>
+                </div>
+
+                <span class="filter-label">A partir de (rango)</span>
+                <input type="text" id="f-desde" class="form-control form-control-sm mb-1" placeholder="DD/MM/AAAA">
+                <input type="text" id="f-hasta" class="form-control form-control-sm mb-3" placeholder="DD/MM/AAAA">
+
+                <button id="btnBuscar" class="btn btn-primary btn-sm w-100">Aplicar filtros</button>
+                <button id="btnLimpiar" class="btn btn-outline-secondary btn-sm w-100 mt-1">Limpiar</button>
+                <button id="btnExportar" class="btn btn-sm w-100 mt-1"
+                    style="background:var(--gem-gold);color:var(--text-dark);border-color:var(--gem-gold-dark);" disabled>
+                    ⬇️ Exportar a Excel
+                </button>
+            </div>
+        </div>
+
+        <!-- RESULTADOS -->
+        <div class="col-lg-9">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Resultados</span>
+                    <span id="counter" class="text-white-50 small">—</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Clave ISSEMYM</th>
+                                    <th>Nombre</th>
+                                    <th>RFC / CURP</th>
+                                    <th>Movimiento</th>
+                                    <th>A partir de</th>
+                                    <th>Fecha emisión</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsBody">
+                                <tr><td colspan="7" class="text-center text-muted py-5">Ingresa al menos 3 caracteres o selecciona un filtro</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-between align-items-center" style="background:#faf7f8;">
+                    <div id="pageInfo" class="text-muted small">—</div>
+                    <div class="d-flex gap-1" id="pagination"></div>
+                </div>
             </div>
         </div>
     </div>
+</div>
 
-<div style="margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9;">
-    <h3>Procesamiento Masivo de Documentos (Lote Multipágina)</h3>
-    <form action="/procesar-lote-web" method="post" enctype="multipart/form-data">
-        <label for="file">Selecciona el PDF con múltiples hojas:</label>
-        <input type="file" id="file" name="file" accept=".pdf" required style="margin-bottom: 10px; display: block;">
-        <button type="submit" style="padding: 8px 15px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
-            Desglosar, Extraer y Renombrar Lote
-        </button>
-    </form>
-</div>
-</div>
+{% include "_footer.html" %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+let currentPage = 1;
+const PER_PAGE = 5;
+let debounceTimer;
+
+const badgeHtml = t => {
+    if (!t) return '<span class="text-muted">—</span>';
+    const cls = t==='ALTA'?'badge-alta':t==='BAJA'?'badge-baja':'badge-cambio';
+    return `<span class="badge ${cls}">${t}</span>`;
+};
+
+function getFilters() {
+    const tipos = [...document.querySelectorAll('.tipo-cb:checked')].map(x=>x.value);
+    return {
+        q:      document.getElementById('searchInput').value.trim(),
+        tipo:   document.getElementById('f-todos').checked ? '' : tipos.join(','),
+        desde:  document.getElementById('f-desde').value.trim(),
+        hasta:  document.getElementById('f-hasta').value.trim(),
+    };
+}
+
+async function loadPage(page) {
+    currentPage = page;
+    const f = getFilters();
+    const params = new URLSearchParams({ q:f.q, tipo:f.tipo, desde:f.desde, hasta:f.hasta, page, per_page:PER_PAGE });
+    const res = await fetch(`/api/search?${params}`);
+    const d = await res.json();
+    renderRows(d);
+    renderPagination(d.page, d.pages, d.total);
+    document.getElementById('btnExportar').disabled = d.total === 0;
+}
+
+function renderRows(d) {
+    const from = (d.page-1)*PER_PAGE+1, to = Math.min(d.page*PER_PAGE, d.total);
+    document.getElementById('counter').textContent = d.total>0 ? `Mostrando ${from}–${to} de ${d.total.toLocaleString()}` : '';
+    if (!d.results.length) {
+        document.getElementById('resultsBody').innerHTML = `<tr><td colspan="7" class="text-center text-muted py-5">Sin resultados</td></tr>`;
+        return;
+    }
+    document.getElementById('resultsBody').innerHTML = d.results.map(r=>`
+        <tr>
+            <td><strong>${r.clave||'—'}</strong></td>
+            <td>${r.nombre||'—'}</td>
+            <td><code class="small">${r.rfc||'—'}</code></td>
+            <td>${badgeHtml(r.tipo)}</td>
+            <td class="small">${r.a_partir_de||'—'}</td>
+            <td class="small">${r.fecha_emision||'—'}</td>
+            <td><a href="/detail/${r.id}" class="btn btn-sm btn-outline-primary">Ver</a></td>
+        </tr>`).join('');
+}
+
+function renderPagination(page, pages, total) {
+    const pi=document.getElementById('pageInfo'), pg=document.getElementById('pagination');
+    pi.textContent = total>0 ? `Página ${page} de ${pages}` : '';
+    if (pages<=1) { pg.innerHTML=''; return; }
+    let html=`<button class="page-btn" onclick="loadPage(${page-1})" ${page===1?'disabled':''}>‹ Ant</button>`;
+    let start=Math.max(1,page-2), end=Math.min(pages,page+2);
+    if (start>1) html+=`<button class="page-btn" onclick="loadPage(1)">1</button>${start>2?'<span class="px-1 text-muted">…</span>':''}`;
+    for (let i=start;i<=end;i++) html+=`<button class="page-btn${i===page?' active':''}" onclick="loadPage(${i})">${i}</button>`;
+    if (end<pages) html+=`${end<pages-1?'<span class="px-1 text-muted">…</span>':''}<button class="page-btn" onclick="loadPage(${pages})">${pages}</button>`;
+    html+=`<button class="page-btn" onclick="loadPage(${page+1})" ${page===pages?'disabled':''}>Sig ›</button>`;
+    pg.innerHTML=html;
+}
+
+function buildExportUrl() {
+    const f=getFilters();
+    return `/api/export?q=${encodeURIComponent(f.q)}&tipo=${encodeURIComponent(f.tipo)}&desde=${encodeURIComponent(f.desde)}&hasta=${encodeURIComponent(f.hasta)}`;
+}
+
+function triggerSearch() { currentPage=1; loadPage(1); }
+
+document.getElementById('searchInput').addEventListener('input', ()=>{
+    clearTimeout(debounceTimer);
+    const q=document.getElementById('searchInput').value.trim();
+    if (q.length===0||q.length>=3) debounceTimer=setTimeout(triggerSearch,280);
+});
+document.getElementById('btnBuscar').addEventListener('click', triggerSearch);
+document.getElementById('btnExportar').addEventListener('click', ()=>{ window.location.href=buildExportUrl(); });
+document.getElementById('btnLimpiar').addEventListener('click', ()=>{
+    document.getElementById('searchInput').value='';
+    document.getElementById('f-desde').value='';
+    document.getElementById('f-hasta').value='';
+    document.getElementById('f-todos').checked=true;
+    document.querySelectorAll('.tipo-cb').forEach(x=>x.checked=false);
+    document.getElementById('resultsBody').innerHTML=`<tr><td colspan="7" class="text-center text-muted py-5">Ingresa un término para buscar</td></tr>`;
+    document.getElementById('counter').textContent='';
+    document.getElementById('pageInfo').textContent='';
+    document.getElementById('pagination').innerHTML='';
+    document.getElementById('btnExportar').disabled=true;
+});
+document.getElementById('f-todos').addEventListener('change', function(){
+    if(this.checked) document.querySelectorAll('.tipo-cb').forEach(x=>x.checked=false);
+});
+document.querySelectorAll('.tipo-cb').forEach(cb=>{
+    cb.addEventListener('change', ()=>{
+        document.getElementById('f-todos').checked=[...document.querySelectorAll('.tipo-cb:checked')].length===0;
+    });
+});
+
+const urlQ=new URLSearchParams(window.location.search).get('q');
+if (urlQ) { document.getElementById('searchInput').value=urlQ; triggerSearch(); }
+</script>
 </body>
 </html>

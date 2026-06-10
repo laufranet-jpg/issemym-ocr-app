@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sin acceso – ISSEMYM</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+{% set role_names = {"busqueda":"Búsqueda","adjuntar":"Adjuntar datos","dashboards":"Dashboards","admin":"Administrador"} %}
+<header class="app-header">
+    <div class="header-inner container-fluid">
+        <div class="header-titles">
+            <div class="header-sup">Gobierno del Estado de México · Secretaría de Educación</div>
+            <div class="header-main">AVISO DE MOVIMIENTO PARA LA AFILIACION Y VIGENCIA DE DERECHOS</div>
+            <div class="header-sub">ISSEMYM – Trámites Externos</div>
+        </div>
+        <nav class="header-nav d-flex gap-1">
+            <a href="/">Inicio</a>
+            <a href="/search">Buscar</a>
+            {% if has_role(current_user, "dashboards", "admin") %}<a href="/dashboard">Dashboard</a>{% endif %}
+        </nav>
+        {% include "_header_user.html" %}
+    </div>
+</header>
+
+<div class="page-content d-flex align-items-center justify-content-center">
+    <div class="text-center py-5">
+        <div class="error-code">403</div>
+        <h4 class="mt-3 mb-2" style="color:var(--gem-dark);">Acceso no autorizado</h4>
+        <p class="text-muted mb-4">Tu perfil
+            <strong>{% for r in current_user.roles | sort %}{{ role_names.get(r, r) }}{% if not loop.last %}, {% endif %}{% endfor %}</strong>
+            no tiene permiso para acceder a esta sección.</p>
+        <a href="/" class="btn btn-primary me-2">← Inicio</a>
+        <a href="/search" class="btn btn-outline-primary">Ir al buscador</a>
+    </div>
+</div>
+
+{% include "_footer.html" %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

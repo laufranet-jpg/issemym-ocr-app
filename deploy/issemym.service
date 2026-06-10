@@ -1,0 +1,33 @@
+[Unit]
+Description=ISSEMYM Trámites Externos — FastAPI
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=issemym
+Group=issemym
+WorkingDirectory=/opt/issemym
+EnvironmentFile=/opt/issemym/.env
+
+# 1 worker en AMD (1/8 OCPU). Aumentar a 2 si tienes ARM con más CPU.
+ExecStart=/opt/issemym/venv/bin/uvicorn app.main:app \
+    --host 127.0.0.1 \
+    --port 8000 \
+    --workers 1 \
+    --timeout-keep-alive 75 \
+    --log-level info \
+    --access-log
+
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Límites de recursos para 1 GB RAM
+LimitNOFILE=65536
+MemoryMax=600M
+CPUQuota=90%
+
+[Install]
+WantedBy=multi-user.target
